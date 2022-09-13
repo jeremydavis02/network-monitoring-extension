@@ -23,9 +23,11 @@ public class NetworkMonitorTask implements AMonitorTaskRunnable {
 
     private MonitorContextConfiguration monitorContextConfiguration;
     private MetricWriteHelper metricWriteHelper;
-    public NetworkMonitorTask(MonitorContextConfiguration contextConfiguration, MetricWriteHelper metricWriteHelper) {
+    private String interfaceName;
+    public NetworkMonitorTask(MonitorContextConfiguration contextConfiguration, MetricWriteHelper metricWriteHelper, String interfaceName) {
         this.monitorContextConfiguration = contextConfiguration;
         this.metricWriteHelper = metricWriteHelper;
+        this.interfaceName = interfaceName;
     }
 
     @Override
@@ -44,7 +46,12 @@ public class NetworkMonitorTask implements AMonitorTaskRunnable {
         String metricPrefix = monitorContextConfiguration.getMetricPrefix();
         try {
             ScriptMetrics scriptMetrics = getScriptMetrics(config);
-            Set<String> networkInterfaces = new HashSet<>((ArrayList<String>)config.get("networkInterfaces"));
+            //this should not be pulling all servers, we should be handling one
+            //interface below decided on by the task executioner up stream
+            //Set<String> networkInterfaces = new HashSet<>((ArrayList<String>)config.get("networkInterfaces"));
+            Set<String> networkInterfaces = new HashSet<>();
+            //Easiest is to set the set to the single interface for the task/thread
+            networkInterfaces.add(this.interfaceName);
             SigarMetrics sigarMetrics = new SigarMetrics(networkInterfaces);
 
             Stat.Stats statsFromMetricsXml = (Stat.Stats) monitorContextConfiguration.getMetricsXml();
