@@ -14,9 +14,7 @@ import com.appdynamics.extensions.network.input.Stat;
 import com.appdynamics.extensions.util.AssertUtils;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.appdynamics.extensions.network.NetworkConstants.DEFAULT_METRIC_PREFIX;
 
@@ -45,10 +43,12 @@ public class NetworkMonitor extends ABaseMonitor {
 		//this should be a task per server as the ExecServiceProvider fires per server
 		List<Map<String, ?>> interfaceList = this.getServers();
 		if (interfaceList.size() > 0) {
+			int counter = 0;
 			for (Map<String, ?> interfaceMap : interfaceList) {
-
-				NetworkMonitorTask networkMonitorTask = new NetworkMonitorTask(getContextConfiguration(), tasksExecutionServiceProvider.getMetricWriteHelper(), interfaceMap.get(0).toString());
+				LOGGER.debug(interfaceMap.get(Integer.toString(counter)).toString());
+				NetworkMonitorTask networkMonitorTask = new NetworkMonitorTask(getContextConfiguration(), tasksExecutionServiceProvider.getMetricWriteHelper(), interfaceMap.get(Integer.toString(counter)).toString());
 				tasksExecutionServiceProvider.submit("NetworkTask", networkMonitorTask);
+				counter++;
 			}
 		}
 	}
@@ -71,7 +71,16 @@ public class NetworkMonitor extends ABaseMonitor {
 		 */
 		//so we are just going to return the network interface list here, let the doRun manage properly the instantiation
 		//of tasks per server
-		return (List<Map<String, ?>>) getContextConfiguration().getConfigYml().get("networkInterfaces");
+		ArrayList<String> interfaces = (ArrayList)getContextConfiguration().getConfigYml().get("networkInterfaces");
+		List<Map<String, ?>> interfacesOut = new ArrayList<>();
+		int counter = 0;
+		for(String iName: interfaces){
+			HashMap<String, String> iMap = new HashMap<>();
+			iMap.put(Integer.toString(counter), iName);
+			interfacesOut.add(iMap);
+			counter++;
+		}
+		return interfacesOut;
 		//anInterface.add(networkInterfaces.get(0));
 		//the below assert checks null, this Utility has no ability to assume length of a list should
 		//be greater than 0 and instantiation of an arraylist that is empty is not a null object
