@@ -16,18 +16,18 @@ import java.util.*;
 
 import static com.appdynamics.extensions.network.NetworkConstants.DEFAULT_SCRIPT_TIMEOUT_IN_SEC;
 
-public class NetworkMonitorTask implements AMonitorTaskRunnable {
-    private static final Logger LOGGER = ExtensionsLoggerFactory.getLogger(NetworkMonitorTask.class);
+public class SystemNetworkMonitorTask implements AMonitorTaskRunnable {
+    private static final Logger LOGGER = ExtensionsLoggerFactory.getLogger(SystemNetworkMonitorTask.class);
     ObjectMapper objectMapper = new ObjectMapper();
     private BigInteger heartBeatValue = BigInteger.ZERO;
 
     private MonitorContextConfiguration monitorContextConfiguration;
     private MetricWriteHelper metricWriteHelper;
-    private String interfaceName;
-    public NetworkMonitorTask(MonitorContextConfiguration contextConfiguration, MetricWriteHelper metricWriteHelper, String interfaceName) {
+    //private String interfaceName;
+    public SystemNetworkMonitorTask(MonitorContextConfiguration contextConfiguration, MetricWriteHelper metricWriteHelper) {
         this.monitorContextConfiguration = contextConfiguration;
         this.metricWriteHelper = metricWriteHelper;
-        this.interfaceName = interfaceName;
+        //this.interfaceName = interfaceName;
     }
 
     @Override
@@ -45,26 +45,16 @@ public class NetworkMonitorTask implements AMonitorTaskRunnable {
         List<Metric> metricsList = Lists.newArrayList();
         String metricPrefix = monitorContextConfiguration.getMetricPrefix();
         try {
-            //Splitting out script and sigar metrics to their own
-            //tasks because the task threading executes a task/thread
-            //per interface and as such only network interface centric
-            //metrics should run here but scripts can override any
-            //metric
             ScriptMetrics scriptMetrics = getScriptMetrics(config);
-            //this should not be pulling all servers, we should be handling one
-            //interface below decided on by the task executioner up stream
-            //Set<String> networkInterfaces = new HashSet<>((ArrayList<String>)config.get("networkInterfaces"));
             Set<String> networkInterfaces = new HashSet<>();
-            //Easiest is to set the set to the single interface for the task/thread
-            networkInterfaces.add(this.interfaceName);
             SigarMetrics sigarMetrics = new SigarMetrics(networkInterfaces);
 
             Stat.Stats statsFromMetricsXml = (Stat.Stats) monitorContextConfiguration.getMetricsXml();
 
             NetworkMetricsCollector metricsCollector = new NetworkMetricsCollector
                     (sigarMetrics, scriptMetrics, networkInterfaces, statsFromMetricsXml, metricPrefix);
-
-            metricsList.addAll(metricsCollector.collectMetrics("interfaces"));
+            //don't get network interface specific metrics here
+            metricsList.addAll(metricsCollector.collectMetrics("system"));
             heartBeatValue = BigInteger.ONE;
         } catch (Exception e) {
             LOGGER.error("Error while collecting metrics for Network Monitor", e);

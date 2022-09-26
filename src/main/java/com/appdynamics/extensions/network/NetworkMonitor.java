@@ -50,6 +50,10 @@ public class NetworkMonitor extends ABaseMonitor {
 				tasksExecutionServiceProvider.submit("NetworkTask", networkMonitorTask);
 				counter++;
 			}
+			//do the non interface based tasks too but only once
+			//instead of during each network interface run
+			SystemNetworkMonitorTask systemNetworkMonitorTask = new SystemNetworkMonitorTask(getContextConfiguration(), tasksExecutionServiceProvider.getMetricWriteHelper());
+			tasksExecutionServiceProvider.submit("SystemNetworkTask", systemNetworkMonitorTask);
 		}
 	}
 

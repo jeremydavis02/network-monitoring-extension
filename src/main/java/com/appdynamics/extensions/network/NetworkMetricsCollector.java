@@ -53,35 +53,41 @@ public class NetworkMetricsCollector {
 
 	public NetworkMetricsCollector(SigarMetrics sigarMetrics,
 								   ScriptMetrics scriptMetrics, Set<String> networkInterfaces, Stat.Stats statsFromMetricsXml, String metricPrefix) {
-		
-		if (sigarMetrics == null || networkInterfaces == null || networkInterfaces.isEmpty()) {
+
+		if (sigarMetrics == null || networkInterfaces == null) {
 			throw new IllegalArgumentException("Sigar metrics and network interfaces must be provided");
 		}
-		
+
 		this.sigarMetrics = sigarMetrics;
 		this.scriptMetrics = scriptMetrics;
 		this.networkInterfaces = networkInterfaces;
 		this.statsFromMetricsXml = statsFromMetricsXml;
 		this.metricPrefix = metricPrefix;
 	}
-	
-	public List<Metric> collectMetrics() {
+	//lets add control here of metrics to collect to fix
+	//per interface threading repeating non interface metrics.
+	public List<Metric> collectMetrics(String metricGroup) {
 		AssertUtils.assertNotNull(statsFromMetricsXml.getStats(), "The stats section in metrics.xml is not configured");
 		for (Stat stat : statsFromMetricsXml.getStats()) {
-			if (StringUtils.hasText(stat.getName()) && stat.getName().equalsIgnoreCase("networkInterfaceMetrics")) {
-				collectNetInterfaceMetrics(stat.getMetricConfig());
+			if (metricGroup.equalsIgnoreCase("interfaces")) {
+				if (StringUtils.hasText(stat.getName()) && stat.getName().equalsIgnoreCase("networkInterfaceMetrics")) {
+					collectNetInterfaceMetrics(stat.getMetricConfig());
+				}
 			}
-			else if (StringUtils.hasText(stat.getName())) {
-				collectTcpMetrics(stat.getName(), stat.getMetricConfig());
-			} else {
-				collectOtherMetrics(stat.getMetricConfig());
+			if (metricGroup.equalsIgnoreCase("system")) {
+				LOGGER.debug("Doing system level network metrics");
+				if (StringUtils.hasText(stat.getName())) {
+					collectTcpMetrics(stat.getName(), stat.getMetricConfig());
+				} else {
+					collectOtherMetrics(stat.getMetricConfig());
+				}
 			}
 		}
 		collectSrtiptMetrics();
 		return metrics;
 	}
 	
-	private void collectSrtiptMetrics() {
+		private void collectSrtiptMetrics() {
 		Iterator<String> itr= scriptMetrics.getMetrics().keySet().iterator();
 		while(itr.hasNext()){
 			String metricName= itr.next();
